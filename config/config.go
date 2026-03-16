@@ -281,6 +281,15 @@ type LocalFlags struct {
 	ContainerzContainerUpdateImageName    string `json:"containerz-container-update-image-name,omitempty" mapstructure:"containerz-container-update-image-name,omitempty" yaml:"containerz-container-update-image-name,omitempty"`
 	ContainerzContainerUpdateImageTag     string `json:"containerz-container-update-image-tag,omitempty" mapstructure:"containerz-container-update-image-tag,omitempty" yaml:"containerz-container-update-image-tag,omitempty"`
 	ContainerzContainerUpdateAsync        bool   `json:"containerz-container-update-async,omitempty" mapstructure:"containerz-container-update-async,omitempty" yaml:"containerz-container-update-async,omitempty"`
+	// Containerz - Container Update params (mirrors StartContainerRequest fields)
+	// Viper keys match the flag names: update-cmd, update-port, etc.
+	ContainerzContainerUpdateParamsCmd          string   `json:"containerz-container-update-cmd,omitempty" mapstructure:"containerz-container-update-cmd,omitempty" yaml:"containerz-container-update-cmd,omitempty"`
+	ContainerzContainerUpdateParamsPorts        []string `json:"containerz-container-update-port,omitempty" mapstructure:"containerz-container-update-port,omitempty" yaml:"containerz-container-update-port,omitempty"`
+	ContainerzContainerUpdateParamsEnv          []string `json:"containerz-container-update-env,omitempty" mapstructure:"containerz-container-update-env,omitempty" yaml:"containerz-container-update-env,omitempty"`
+	ContainerzContainerUpdateParamsVolumes      []string `json:"containerz-container-update-volume,omitempty" mapstructure:"containerz-container-update-volume,omitempty" yaml:"containerz-container-update-volume,omitempty"`
+	ContainerzContainerUpdateParamsNetwork      string   `json:"containerz-container-update-network,omitempty" mapstructure:"containerz-container-update-network,omitempty" yaml:"containerz-container-update-network,omitempty"`
+	ContainerzContainerUpdateParamsRestart      string   `json:"containerz-container-update-restart,omitempty" mapstructure:"containerz-container-update-restart,omitempty" yaml:"containerz-container-update-restart,omitempty"`
+	ContainerzContainerUpdateParamsLabels       []string `json:"containerz-container-update-label,omitempty" mapstructure:"containerz-container-update-label,omitempty" yaml:"containerz-container-update-label,omitempty"`
 	// Containerz - Log
 	ContainerzLogInstanceName string `json:"containerz-log-instance-name,omitempty" mapstructure:"containerz-log-instance-name,omitempty" yaml:"containerz-log-instance-name,omitempty"`
 	ContainerzLogFollow       bool   `json:"containerz-log-follow,omitempty" mapstructure:"containerz-log-follow,omitempty" yaml:"containerz-log-follow,omitempty"`

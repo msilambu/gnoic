@@ -48,7 +48,7 @@ gnoic
  │    │    ├─── start
  │    │    ├─── stop
  │    │    └─── update
- │    ├─── deploy
+ │    ├─── deploy (push container and plugin images)
  │    ├─── image
  │    │    ├─── list
  │    │    └─── remove

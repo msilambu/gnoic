@@ -14,7 +14,106 @@ import (
 	"github.com/spf13/pflag"
 )
 
-//  StartContainer
+// shared helpers
+
+// parseRestartPolicy converts a restart policy string (e.g. "on-failure:5") into
+// a StartContainerRequest_Restart message. It is used by both StartContainer and
+// the params field of UpdateContainer.
+func parseRestartPolicy(input string) (*containerz.StartContainerRequest_Restart, error) {
+	v := strings.ToLower(input)
+	switch {
+	case v == "always":
+		return &containerz.StartContainerRequest_Restart{
+			Policy: containerz.StartContainerRequest_Restart_ALWAYS,
+		}, nil
+	case v == "unless-stopped":
+		return &containerz.StartContainerRequest_Restart{
+			Policy: containerz.StartContainerRequest_Restart_UNLESS_STOPPED,
+		}, nil
+	case v == "on-failure" || strings.HasPrefix(v, "on-failure:"):
+		var attempts uint32
+		if idx := strings.Index(v, ":"); idx != -1 {
+			suffix := v[idx+1:]
+			var n uint32
+			if _, err := fmt.Sscanf(suffix, "%d", &n); err != nil {
+				return nil, fmt.Errorf("invalid attempts value in restart policy %q: %v", input, err)
+			}
+			attempts = n
+		}
+		return &containerz.StartContainerRequest_Restart{
+			Policy:   containerz.StartContainerRequest_Restart_ON_FAILURE,
+			Attempts: attempts,
+		}, nil
+	default:
+		return &containerz.StartContainerRequest_Restart{
+			Policy: containerz.StartContainerRequest_Restart_NONE,
+		}, nil
+	}
+}
+
+// buildStartContainerRequest assembles a StartContainerRequest from the
+// supplied field values. It is used directly by StartContainer and as the
+// params sub-message of UpdateContainer.
+func buildStartContainerRequest(
+	imageName, tag, cmd, instanceName, network, restartPolicy string,
+	ports, env, volumes, labels []string,
+) (*containerz.StartContainerRequest, error) {
+	req := &containerz.StartContainerRequest{
+		ImageName:    imageName,
+		Tag:          tag,
+		Cmd:          cmd,
+		InstanceName: instanceName,
+		Environment:  parseKVMap(env),
+		Labels:       parseKVMap(labels),
+		Network:      network,
+	}
+
+	// Port mappings "internal:external"
+	for _, p := range ports {
+		parts := strings.SplitN(p, ":", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid port mapping %q, expected internal:external", p)
+		}
+		var internal, external uint32
+		if _, err := fmt.Sscanf(parts[0], "%d", &internal); err != nil {
+			return nil, fmt.Errorf("invalid internal port in %q: %v", p, err)
+		}
+		if _, err := fmt.Sscanf(parts[1], "%d", &external); err != nil {
+			return nil, fmt.Errorf("invalid external port in %q: %v", p, err)
+		}
+		req.Ports = append(req.Ports, &containerz.StartContainerRequest_Port{
+			Internal: internal,
+			External: external,
+		})
+	}
+
+	// Volume mounts "name:mountpoint[:ro]"
+	for _, v := range volumes {
+		parts := strings.SplitN(v, ":", 3)
+		if len(parts) < 2 {
+			return nil, fmt.Errorf("invalid volume %q, expected name:mountpoint[:ro]", v)
+		}
+		vol := &containerz.Volume{
+			Name:       parts[0],
+			MountPoint: parts[1],
+		}
+		if len(parts) == 3 && strings.EqualFold(parts[2], "ro") {
+			vol.ReadOnly = true
+		}
+		req.Volumes = append(req.Volumes, vol)
+	}
+
+	// Restart policy
+	restart, err := parseRestartPolicy(restartPolicy)
+	if err != nil {
+		return nil, err
+	}
+	req.Restart = restart
+
+	return req, nil
+}
+
+// StartContainer
 
 func (a *App) InitContainerzStartContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
@@ -26,7 +125,7 @@ func (a *App) InitContainerzStartContainerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartEnv, "env", []string{}, "environment variables in KEY=VALUE format (repeatable)")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartVolumes, "volume", []string{}, "volume mounts in name:mountpoint[:ro] format (repeatable)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartNetwork, "network", "", "network mode (e.g. host, bridge)")
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "none", "restart policy: none|always|unless-stopped|on-failure")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "none", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartLabels, "label", []string{}, "labels in KEY=VALUE format (repeatable)")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
@@ -43,82 +142,20 @@ func (a *App) RunEContainerzStartContainer(cmd *cobra.Command, args []string) er
 }
 
 func (a *App) containerzStartContainer(ctx context.Context, t *api.Target, c containerz.ContainerzClient) error {
-	req := &containerz.StartContainerRequest{
-		ImageName:    a.Config.ContainerzContainerStartImageName,
-		Tag:          a.Config.ContainerzContainerStartTag,
-		Cmd:          a.Config.ContainerzContainerStartCmd,
-		InstanceName: a.Config.ContainerzContainerStartInstanceName,
-		Environment:  parseKVMap(a.Config.ContainerzContainerStartEnv),
-		Labels:       parseKVMap(a.Config.ContainerzContainerStartLabels),
-		Network:      a.Config.ContainerzContainerStartNetwork,
-	}
-
-	// Parse port mappings "internal:external"
-	for _, p := range a.Config.ContainerzContainerStartPorts {
-		parts := strings.SplitN(p, ":", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid port mapping %q, expected internal:external", p)
-		}
-		var internal, external uint32
-		if _, err := fmt.Sscanf(parts[0], "%d", &internal); err != nil {
-			return fmt.Errorf("invalid internal port in %q: %v", p, err)
-		}
-		if _, err := fmt.Sscanf(parts[1], "%d", &external); err != nil {
-			return fmt.Errorf("invalid external port in %q: %v", p, err)
-		}
-		req.Ports = append(req.Ports, &containerz.StartContainerRequest_Port{
-			Internal: internal,
-			External: external,
-		})
-	}
-
-	// Parse volume mounts "name:mountpoint[:ro]"
-	for _, v := range a.Config.ContainerzContainerStartVolumes {
-		parts := strings.SplitN(v, ":", 3)
-		if len(parts) < 2 {
-			return fmt.Errorf("invalid volume %q, expected name:mountpoint[:ro]", v)
-		}
-		vol := &containerz.Volume{
-			Name:       parts[0],
-			MountPoint: parts[1],
-		}
-		if len(parts) == 3 && strings.EqualFold(parts[2], "ro") {
-			vol.ReadOnly = true
-		}
-		req.Volumes = append(req.Volumes, vol)
-	}
-
-	// Parse restart policy.
-	// on-failure accepts an optional attempts count: "on-failure:<n>".
-	restartInput := strings.ToLower(a.Config.ContainerzContainerStartRestart)
-	switch {
-	case restartInput == "always":
-		req.Restart = &containerz.StartContainerRequest_Restart{
-			Policy: containerz.StartContainerRequest_Restart_ALWAYS,
-		}
-	case restartInput == "unless-stopped":
-		req.Restart = &containerz.StartContainerRequest_Restart{
-			Policy: containerz.StartContainerRequest_Restart_UNLESS_STOPPED,
-		}
-	case restartInput == "on-failure" || strings.HasPrefix(restartInput, "on-failure:"):
-		var attempts uint32
-		if idx := strings.Index(restartInput, ":"); idx != -1 {
-			suffix := restartInput[idx+1:]
-			var n uint32
-			if _, err := fmt.Sscanf(suffix, "%d", &n); err != nil {
-				return fmt.Errorf("invalid attempts value in restart policy %q: %v",
-					a.Config.ContainerzContainerStartRestart, err)
-			}
-			attempts = n
-		}
-		req.Restart = &containerz.StartContainerRequest_Restart{
-			Policy: containerz.StartContainerRequest_Restart_ON_FAILURE,
-			Attempts: attempts,
-		}
-	default:
-		req.Restart = &containerz.StartContainerRequest_Restart{
-			Policy: containerz.StartContainerRequest_Restart_NONE,
-		}
+	req, err := buildStartContainerRequest(
+		a.Config.ContainerzContainerStartImageName,
+		a.Config.ContainerzContainerStartTag,
+		a.Config.ContainerzContainerStartCmd,
+		a.Config.ContainerzContainerStartInstanceName,
+		a.Config.ContainerzContainerStartNetwork,
+		a.Config.ContainerzContainerStartRestart,
+		a.Config.ContainerzContainerStartPorts,
+		a.Config.ContainerzContainerStartEnv,
+		a.Config.ContainerzContainerStartVolumes,
+		a.Config.ContainerzContainerStartLabels,
+	)
+	if err != nil {
+		return err
 	}
 
 	rsp, err := c.StartContainer(ctx, req)
@@ -135,7 +172,7 @@ func (a *App) containerzStartContainer(ctx context.Context, t *api.Target, c con
 	return nil
 }
 
-//  StopContainer 
+// StopContainer
 
 func (a *App) InitContainerzStopContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
@@ -171,7 +208,7 @@ func (a *App) containerzStopContainer(ctx context.Context, t *api.Target, c cont
 	return nil
 }
 
-//  ListContainer 
+// ListContainer
 
 func (a *App) InitContainerzListContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
@@ -231,7 +268,7 @@ func (a *App) containerzListContainer(ctx context.Context, t *api.Target, c cont
 	return nil
 }
 
-//  RemoveContainer
+// RemoveContainer
 
 func (a *App) InitContainerzRemoveContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
@@ -265,14 +302,29 @@ func (a *App) containerzRemoveContainer(ctx context.Context, t *api.Target, c co
 	return nil
 }
 
-//  UpdateContainer
+// UpdateContainer
 
 func (a *App) InitContainerzUpdateContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
+	// Identity of the container being updated and the new image target.
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateInstanceName, "instance-name", "", "name of the running container to update (required)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateImageName, "image", "", "new image name to update to (required)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateImageTag, "tag", "latest", "new image tag")
 	cmd.Flags().BoolVar(&a.Config.ContainerzContainerUpdateAsync, "async", false, "perform the update asynchronously")
+	// params field – runtime parameters for the updated container.
+	// These use the same flag names as 'container start' for convenience.
+	// If none are provided, params is left nil and the server reuses the
+	// existing container configuration.
+	// Note: --new-instance-name is used instead of --instance-name to avoid
+	// conflict with the flag that identifies which container to update.
+	//cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsInstanceName, "new-instance-name", "", "instance name to assign to the updated container")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsCmd, "cmd", "", "command to run inside the updated container")
+	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsPorts, "port", []string{}, "port mappings in internal:external format (repeatable)")
+	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsEnv, "env", []string{}, "environment variables in KEY=VALUE format (repeatable)")
+	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsVolumes, "volume", []string{}, "volume mounts in name:mountpoint[:ro] format (repeatable)")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsNetwork, "network", "", "network mode for the updated container (e.g. host, bridge)")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsRestart, "restart", "", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
+	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsLabels, "label", []string{}, "labels in KEY=VALUE format (repeatable)")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
 	})
@@ -297,6 +349,28 @@ func (a *App) containerzUpdateContainer(ctx context.Context, t *api.Target, c co
 		ImageTag:     a.Config.ContainerzContainerUpdateImageTag,
 		Async:        a.Config.ContainerzContainerUpdateAsync,
 	}
+
+	// Populate params only when at least one params flag was supplied.
+	// An empty params field tells the server to keep the existing runtime config.
+	if a.paramsProvided() {
+		params, err := buildStartContainerRequest(
+			a.Config.ContainerzContainerUpdateImageName,
+			a.Config.ContainerzContainerUpdateImageTag,
+			a.Config.ContainerzContainerUpdateParamsCmd,
+			a.Config.ContainerzContainerUpdateInstanceName,  // Use same instance name 
+			a.Config.ContainerzContainerUpdateParamsNetwork,
+			a.Config.ContainerzContainerUpdateParamsRestart,
+			a.Config.ContainerzContainerUpdateParamsPorts,
+			a.Config.ContainerzContainerUpdateParamsEnv,
+			a.Config.ContainerzContainerUpdateParamsVolumes,
+			a.Config.ContainerzContainerUpdateParamsLabels,
+		)
+		if err != nil {
+			return fmt.Errorf("invalid params: %v", err)
+		}
+		req.Params = params
+	}
+
 	rsp, err := c.UpdateContainer(ctx, req)
 	if err != nil {
 		return fmt.Errorf("UpdateContainer RPC failed: %v", err)
@@ -310,4 +384,18 @@ func (a *App) containerzUpdateContainer(ctx context.Context, t *api.Target, c co
 		return fmt.Errorf("[%s] UpdateContainer failed", t.Config.Address)
 	}
 	return nil
+}
+
+// paramsProvided returns true if the caller set at least one params flag
+// (--cmd, --port, --env, --volume, --network, --restart, --label,
+// --new-instance-name), meaning req.Params should be populated.
+func (a *App) paramsProvided() bool {
+	return a.Config.ContainerzContainerUpdateParamsCmd != "" ||
+		a.Config.ContainerzContainerUpdateInstanceName != "" ||
+		a.Config.ContainerzContainerUpdateParamsNetwork != "" ||
+		a.Config.ContainerzContainerUpdateParamsRestart != "" ||
+		len(a.Config.ContainerzContainerUpdateParamsPorts) > 0 ||
+		len(a.Config.ContainerzContainerUpdateParamsEnv) > 0 ||
+		len(a.Config.ContainerzContainerUpdateParamsVolumes) > 0 ||
+		len(a.Config.ContainerzContainerUpdateParamsLabels) > 0
 }
