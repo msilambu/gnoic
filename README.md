@@ -1,12 +1,13 @@
 `gnoic` is a gNOI CLI client that provides support for the below gNOI Services:
 - [Certificate Managment](https://github.com/openconfig/gnoi/blob/master/cert/cert.proto)
+- [Containerz](https://github.com/openconfig/gnoi/blob/main/containerz/containerz.proto)
 - [Factory Reset](https://github.com/openconfig/gnoi/blob/main/factory_reset/factory_reset.proto)
 - [File](https://github.com/openconfig/gnoi/blob/master/file/file.proto)
 - [Healthz](https://github.com/openconfig/gnoi/blob/main/healthz/healthz.proto)
 - [OS](https://github.com/openconfig/gnoi/blob/main/os/os.proto)
 - [System](https://github.com/openconfig/gnoi/blob/master/system/system.proto)
 
-As well as a server implementation of the gNOI [File](https://github.com/openconfig/gnoi/blob/master/file/file.proto) Service.
+As well as a server implementation of the gNOI [File](https://github.com/openconfig/gnoi/blob/master/file/file.proto) Service and a mock server implementation of the gNOI [Containerz](https://github.com/openconfig/gnoi/blob/main/containerz/containerz.proto) Service.
 
 Documentation available at [https://gnoic.kmrd.dev](https://gnoic.kmrd.dev)
 
@@ -40,6 +41,27 @@ gnoic
  │    ├─── fish
  │    ├─── powershell
  │    └─── zsh
+ ├─── containerz
+ │    ├─── container
+ │    │    ├─── list
+ │    │    ├─── remove
+ │    │    ├─── start
+ │    │    ├─── stop
+ │    │    └─── update
+ │    ├─── deploy
+ │    ├─── image
+ │    │    ├─── list
+ │    │    └─── remove
+ │    ├─── log
+ │    ├─── plugin
+ │    │    ├─── list
+ │    │    ├─── remove
+ │    │    ├─── start
+ │    │    └─── stop
+ │    └─── volume
+ │         ├─── create
+ │         ├─── list
+ │         └─── remove
  ├─── factory-reset
  │    └─── start
  ├─── file
