@@ -42,26 +42,22 @@ gnoic
  │    ├─── powershell
  │    └─── zsh
  ├─── containerz
- │    ├─── container
- │    │    ├─── list
- │    │    ├─── remove
- │    │    ├─── start
- │    │    ├─── stop
- │    │    └─── update
- │    ├─── deploy (push container and plugin images)
- │    ├─── image
- │    │    ├─── list
- │    │    └─── remove
+ │    ├─── container-list
+ │    ├─── container-remove
+ │    ├─── container-start
+ │    ├─── container-stop
+ │    ├─── container-update
+ │    ├─── image-list
+ │    ├─── image-push
+ │    ├─── image-remove
  │    ├─── log
- │    ├─── plugin
- │    │    ├─── list
- │    │    ├─── remove
- │    │    ├─── start
- │    │    └─── stop
- │    └─── volume
- │         ├─── create
- │         ├─── list
- │         └─── remove
+ │    ├─── plugin-list
+ │    ├─── plugin-remove
+ │    ├─── plugin-start
+ │    ├─── plugin-stop
+ │    ├─── volume-create
+ │    ├─── volume-list
+ │    └─── volume-remove
  ├─── factory-reset
  │    └─── start
  ├─── file

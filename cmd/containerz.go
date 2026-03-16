@@ -2,83 +2,39 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-// newContainerzCmd represents the top-level containerz command
+// newContainerzCmd represents the top-level containerz command.
+// All sub-commands are registered directly here (2-level hierarchy):
+//
+//	gnoic containerz <group-action> [flags]
 func newContainerzCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "containerz",
-		Short: "run Containerz gNOI RPCs",
+		Use:          "containerz",
+		Short:        "run Containerz gNOI RPCs",
 		SilenceUsage: true,
 	}
 	gApp.InitContainerzFlags(cmd)
 	cmd.AddCommand(
-		newContainerzDeployCmd(),
-		newContainerzImageCmd(),
-		newContainerzContainerCmd(),
-		newContainerzLogCmd(),
-		newContainerzVolumeCmd(),
-		newContainerzPluginCmd(),
-	)
-	return cmd
-}
-
-// Image sub-group
-
-func newContainerzImageCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "image",
-		Short:        "run Containerz Image gNOI RPCs",
-		SilenceUsage: true,
-	}
-	cmd.AddCommand(
+		// Image RPCs
+		newContainerzImagePushCmd(),
 		newContainerzImageListCmd(),
 		newContainerzImageRemoveCmd(),
-	)
-	return cmd
-}
 
-// Container sub-group
-
-func newContainerzContainerCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "container",
-		Short:        "run Containerz Container gNOI RPCs",
-		SilenceUsage: true,
-	}
-	cmd.AddCommand(
+		// Container RPCs
 		newContainerzContainerStartCmd(),
 		newContainerzContainerStopCmd(),
 		newContainerzContainerListCmd(),
 		newContainerzContainerRemoveCmd(),
 		newContainerzContainerUpdateCmd(),
-	)
-	return cmd
-}
 
-// Volume sub-group
+		// Log RPC
+		newContainerzLogCmd(),
 
-func newContainerzVolumeCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "volume",
-		Short:        "run Containerz Volume gNOI RPCs",
-		SilenceUsage: true,
-	}
-	cmd.AddCommand(
+		// Volume RPCs
 		newContainerzVolumeCreateCmd(),
 		newContainerzVolumeListCmd(),
 		newContainerzVolumeRemoveCmd(),
-	)
-	return cmd
-}
 
-// Plugin sub-group
-
-func newContainerzPluginCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "plugin",
-		Short:        "run Containerz Plugin gNOI RPCs",
-		SilenceUsage: true,
-	}
-	cmd.AddCommand(
+		// Plugin RPCs
 		newContainerzPluginStartCmd(),
 		newContainerzPluginStopCmd(),
 		newContainerzPluginListCmd(),
@@ -89,9 +45,9 @@ func newContainerzPluginCmd() *cobra.Command {
 
 // Deploy
 
-func newContainerzDeployCmd() *cobra.Command {
+func newContainerzImagePushCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deploy",
+		Use:   "image-push",
 		Short: "run containerz Deploy gNOI RPC (upload image or plugin to target)",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -107,9 +63,8 @@ func newContainerzDeployCmd() *cobra.Command {
 
 func newContainerzImageListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "run containerz ListImage gNOI RPC",
+		Use:   "image-list",
+		Short: "run containerz ListImage gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -124,9 +79,8 @@ func newContainerzImageListCmd() *cobra.Command {
 
 func newContainerzImageRemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm"},
-		Short:   "run containerz RemoveImage gNOI RPC",
+		Use:   "image-remove",
+		Short: "run containerz RemoveImage gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -141,7 +95,7 @@ func newContainerzImageRemoveCmd() *cobra.Command {
 
 func newContainerzContainerStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start",
+		Use:   "container-start",
 		Short: "run containerz StartContainer gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -157,7 +111,7 @@ func newContainerzContainerStartCmd() *cobra.Command {
 
 func newContainerzContainerStopCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stop",
+		Use:   "container-stop",
 		Short: "run containerz StopContainer gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -173,9 +127,8 @@ func newContainerzContainerStopCmd() *cobra.Command {
 
 func newContainerzContainerListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "run containerz ListContainer gNOI RPC",
+		Use:   "container-list",
+		Short: "run containerz ListContainer gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -190,9 +143,8 @@ func newContainerzContainerListCmd() *cobra.Command {
 
 func newContainerzContainerRemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm"},
-		Short:   "run containerz RemoveContainer gNOI RPC",
+		Use:   "container-remove",
+		Short: "run containerz RemoveContainer gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -207,7 +159,7 @@ func newContainerzContainerRemoveCmd() *cobra.Command {
 
 func newContainerzContainerUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update",
+		Use:   "container-update",
 		Short: "run containerz UpdateContainer gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -239,7 +191,7 @@ func newContainerzLogCmd() *cobra.Command {
 
 func newContainerzVolumeCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create",
+		Use:   "volume-create",
 		Short: "run containerz CreateVolume gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -255,9 +207,8 @@ func newContainerzVolumeCreateCmd() *cobra.Command {
 
 func newContainerzVolumeListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "run containerz ListVolume gNOI RPC",
+		Use:   "volume-list",
+		Short: "run containerz ListVolume gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -272,9 +223,8 @@ func newContainerzVolumeListCmd() *cobra.Command {
 
 func newContainerzVolumeRemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm"},
-		Short:   "run containerz RemoveVolume gNOI RPC",
+		Use:   "volume-remove",
+		Short: "run containerz RemoveVolume gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -289,7 +239,7 @@ func newContainerzVolumeRemoveCmd() *cobra.Command {
 
 func newContainerzPluginStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start",
+		Use:   "plugin-start",
 		Short: "run containerz StartPlugin gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -305,7 +255,7 @@ func newContainerzPluginStartCmd() *cobra.Command {
 
 func newContainerzPluginStopCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stop",
+		Use:   "plugin-stop",
 		Short: "run containerz StopPlugin gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
@@ -321,9 +271,8 @@ func newContainerzPluginStopCmd() *cobra.Command {
 
 func newContainerzPluginListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "run containerz ListPlugins gNOI RPC",
+		Use:   "plugin-list",
+		Short: "run containerz ListPlugins gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
@@ -338,9 +287,8 @@ func newContainerzPluginListCmd() *cobra.Command {
 
 func newContainerzPluginRemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm"},
-		Short:   "run containerz RemovePlugin gNOI RPC",
+		Use:   "plugin-remove",
+		Short: "run containerz RemovePlugin gNOI RPC",
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			gApp.Config.SetLocalFlagsFromFile(cmd)
 		},
