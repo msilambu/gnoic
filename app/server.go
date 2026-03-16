@@ -21,6 +21,7 @@ import (
 	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/mitchellh/go-homedir"
 	"github.com/openconfig/gnoi/common"
+	"github.com/openconfig/gnoi/containerz"
 	"github.com/openconfig/gnoi/file"
 	"github.com/openconfig/gnoi/types"
 	"github.com/pkg/sftp"
@@ -42,6 +43,7 @@ func (a *App) InitServerFlags(cmd *cobra.Command) {
 	//
 	cmd.Flags().BoolVar(&a.Config.ServerFile, "file", false, "start gNOI File service server")
 	cmd.Flags().StringVar(&a.Config.ServerFileHash, "file-hash", "md5", "hash type to use at the end of File Get/Transfer RPC. md5, sha256, sha512")
+	cmd.Flags().BoolVar(&a.Config.ServerContainerz, "containerz", false, "start gNOI Containerz mock service server")
 	//
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
@@ -62,24 +64,53 @@ func (a *App) RunEServer(cmd *cobra.Command, args []string) error {
 		break
 	}
 
-	homedir, _ := homedir.Dir()
-	fileServer := &fserver{
-		logger:         a.Logger.WithField("server", "file"),
-		s:              grpc.NewServer(),
-		rootDir:        homedir,
-		fileHashMethod: strings.ToLower(a.Config.ServerFileHash),
+	grpcServer := grpc.NewServer()
+
+	// Register File service if requested.
+	if a.Config.ServerFile {
+		homedir, _ := homedir.Dir()
+		fs := &fserver{
+			logger:         a.Logger.WithField("server", "file"),
+			s:              grpcServer,
+			rootDir:        homedir,
+			fileHashMethod: strings.ToLower(a.Config.ServerFileHash),
+		}
+		file.RegisterFileServer(grpcServer, fs)
+		a.Logger.Info("File service registered")
 	}
-	file.RegisterFileServer(fileServer.s, fileServer)
-	reflection.Register(fileServer.s)
+
+	// Register Containerz mock service if requested.
+	if a.Config.ServerContainerz {
+		cs := &containerzMockServer{
+			logger: a.Logger.WithField("server", "containerz"),
+		}
+		containerz.RegisterContainerzServer(grpcServer, cs)
+		a.Logger.Info("Containerz mock service registered")
+	}
+
+	// Default: register file server for backwards compatibility when no flag is set.
+	if !a.Config.ServerFile && !a.Config.ServerContainerz {
+		homedir, _ := homedir.Dir()
+		fs := &fserver{
+			logger:         a.Logger.WithField("server", "file"),
+			s:              grpcServer,
+			rootDir:        homedir,
+			fileHashMethod: strings.ToLower(a.Config.ServerFileHash),
+		}
+		file.RegisterFileServer(grpcServer, fs)
+		a.Logger.Info("File service registered (default)")
+	}
+
+	reflection.Register(grpcServer)
 	ctx, cancel := context.WithCancel(a.ctx)
 	go func() {
-		err = fileServer.s.Serve(l)
+		err = grpcServer.Serve(l)
 		if err != nil {
 			a.Logger.Printf("gRPC server shutdown: %v", err)
 		}
 		cancel()
 	}()
-	fileServer.logger.Info("file Server started...")
+	a.Logger.Infof("gRPC server listening on %s", a.Config.Address[0])
 	<-ctx.Done()
 	return nil
 }

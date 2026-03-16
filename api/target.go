@@ -11,6 +11,7 @@ import (
 	"github.com/AlekSi/pointer"
 	"github.com/karimra/gnoic/config"
 	"github.com/openconfig/gnoi/cert"
+	"github.com/openconfig/gnoi/containerz"
 	"github.com/openconfig/gnoi/file"
 	gnoios "github.com/openconfig/gnoi/os"
 	"github.com/openconfig/gnoi/system"
@@ -124,6 +125,10 @@ func (t *Target) NewOsClient() gnoios.OSClient {
 
 func (t *Target) SystemClient() system.SystemClient {
 	return system.NewSystemClient(t.client)
+}
+
+func (t *Target) ContainerzClient() containerz.ContainerzClient {
+	return containerz.NewContainerzClient(t.client)
 }
 
 // Name sets the target name.

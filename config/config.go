@@ -236,11 +236,73 @@ type LocalFlags struct {
 	OsActivateStandbySupervisor bool   `json:"os-activate-standby-supervisor,omitempty" mapstructure:"os-activate-standby-supervisor,omitempty" yaml:"os-activate-standby-supervisor,omitempty"`
 	OsActivateNoReboot          bool   `json:"os-activate-no-reboot,omitempty" mapstructure:"os-activate-no-reboot,omitempty" yaml:"os-activate-no-reboot,omitempty"`
 	// Server
-	ServerFile     bool   `json:"server-file,omitempty" mapstructure:"server-file,omitempty" yaml:"server-file,omitempty"`
-	ServerFileHash string `json:"server-file-hash,omitempty" mapstructure:"server-file-hash,omitempty" yaml:"server-file-hash,omitempty"`
+	ServerFile          bool   `json:"server-file,omitempty" mapstructure:"server-file,omitempty" yaml:"server-file,omitempty"`
+	ServerFileHash      string `json:"server-file-hash,omitempty" mapstructure:"server-file-hash,omitempty" yaml:"server-file-hash,omitempty"`
+	ServerContainerz    bool   `json:"server-containerz,omitempty" mapstructure:"server-containerz,omitempty" yaml:"server-containerz,omitempty"`
 	// FactoryReset
 	FactoryResetStartFactoryOS bool `json:"factory-reset-start-factory-os,omitempty" mapstructure:"factory-reset-start-factory-os,omitempty" yaml:"factory-reset-start-factory-os,omitempty"`
 	FactoryResetStartZeroFill  bool `json:"factory-reset-start-zero-fill,omitempty" mapstructure:"factory-reset-start-zero-fill,omitempty" yaml:"factory-reset-start-zero-fill,omitempty"`
+	// Containerz - Deploy
+	ContainerzDeployFile      string `json:"containerz-deploy-file,omitempty" mapstructure:"containerz-deploy-file,omitempty" yaml:"containerz-deploy-file,omitempty"`
+	ContainerzDeployImageName string `json:"containerz-deploy-image-name,omitempty" mapstructure:"containerz-deploy-image-name,omitempty" yaml:"containerz-deploy-image-name,omitempty"`
+	ContainerzDeployTag       string `json:"containerz-deploy-tag,omitempty" mapstructure:"containerz-deploy-tag,omitempty" yaml:"containerz-deploy-tag,omitempty"`
+	ContainerzDeployIsPlugin  bool   `json:"containerz-deploy-is-plugin,omitempty" mapstructure:"containerz-deploy-is-plugin,omitempty" yaml:"containerz-deploy-is-plugin,omitempty"`
+	// Containerz - Image List
+	ContainerzImageListLimit  int32    `json:"containerz-image-list-limit,omitempty" mapstructure:"containerz-image-list-limit,omitempty" yaml:"containerz-image-list-limit,omitempty"`
+	ContainerzImageListFilter []string `json:"containerz-image-list-filter,omitempty" mapstructure:"containerz-image-list-filter,omitempty" yaml:"containerz-image-list-filter,omitempty"`
+	// Containerz - Image Remove
+	ContainerzImageRemoveName  string `json:"containerz-image-remove-name,omitempty" mapstructure:"containerz-image-remove-name,omitempty" yaml:"containerz-image-remove-name,omitempty"`
+	ContainerzImageRemoveTag   string `json:"containerz-image-remove-tag,omitempty" mapstructure:"containerz-image-remove-tag,omitempty" yaml:"containerz-image-remove-tag,omitempty"`
+	ContainerzImageRemoveForce bool   `json:"containerz-image-remove-force,omitempty" mapstructure:"containerz-image-remove-force,omitempty" yaml:"containerz-image-remove-force,omitempty"`
+	// Containerz - Container Start
+	ContainerzContainerStartImageName    string   `json:"containerz-container-start-image-name,omitempty" mapstructure:"containerz-container-start-image-name,omitempty" yaml:"containerz-container-start-image-name,omitempty"`
+	ContainerzContainerStartTag          string   `json:"containerz-container-start-tag,omitempty" mapstructure:"containerz-container-start-tag,omitempty" yaml:"containerz-container-start-tag,omitempty"`
+	ContainerzContainerStartCmd          string   `json:"containerz-container-start-cmd,omitempty" mapstructure:"containerz-container-start-cmd,omitempty" yaml:"containerz-container-start-cmd,omitempty"`
+	ContainerzContainerStartInstanceName string   `json:"containerz-container-start-instance-name,omitempty" mapstructure:"containerz-container-start-instance-name,omitempty" yaml:"containerz-container-start-instance-name,omitempty"`
+	ContainerzContainerStartPorts        []string `json:"containerz-container-start-ports,omitempty" mapstructure:"containerz-container-start-ports,omitempty" yaml:"containerz-container-start-ports,omitempty"`
+	ContainerzContainerStartEnv          []string `json:"containerz-container-start-env,omitempty" mapstructure:"containerz-container-start-env,omitempty" yaml:"containerz-container-start-env,omitempty"`
+	ContainerzContainerStartVolumes      []string `json:"containerz-container-start-volumes,omitempty" mapstructure:"containerz-container-start-volumes,omitempty" yaml:"containerz-container-start-volumes,omitempty"`
+	ContainerzContainerStartNetwork      string   `json:"containerz-container-start-network,omitempty" mapstructure:"containerz-container-start-network,omitempty" yaml:"containerz-container-start-network,omitempty"`
+	ContainerzContainerStartRestart      string   `json:"containerz-container-start-restart,omitempty" mapstructure:"containerz-container-start-restart,omitempty" yaml:"containerz-container-start-restart,omitempty"`
+	ContainerzContainerStartLabels       []string `json:"containerz-container-start-labels,omitempty" mapstructure:"containerz-container-start-labels,omitempty" yaml:"containerz-container-start-labels,omitempty"`
+	// Containerz - Container Stop
+	ContainerzContainerStopInstanceName string `json:"containerz-container-stop-instance-name,omitempty" mapstructure:"containerz-container-stop-instance-name,omitempty" yaml:"containerz-container-stop-instance-name,omitempty"`
+	ContainerzContainerStopForce        bool   `json:"containerz-container-stop-force,omitempty" mapstructure:"containerz-container-stop-force,omitempty" yaml:"containerz-container-stop-force,omitempty"`
+	ContainerzContainerStopRestart      bool   `json:"containerz-container-stop-restart,omitempty" mapstructure:"containerz-container-stop-restart,omitempty" yaml:"containerz-container-stop-restart,omitempty"`
+	// Containerz - Container List
+	ContainerzContainerListAll    bool     `json:"containerz-container-list-all,omitempty" mapstructure:"containerz-container-list-all,omitempty" yaml:"containerz-container-list-all,omitempty"`
+	ContainerzContainerListLimit  int32    `json:"containerz-container-list-limit,omitempty" mapstructure:"containerz-container-list-limit,omitempty" yaml:"containerz-container-list-limit,omitempty"`
+	ContainerzContainerListFilter []string `json:"containerz-container-list-filter,omitempty" mapstructure:"containerz-container-list-filter,omitempty" yaml:"containerz-container-list-filter,omitempty"`
+	// Containerz - Container Remove
+	ContainerzContainerRemoveName  string `json:"containerz-container-remove-name,omitempty" mapstructure:"containerz-container-remove-name,omitempty" yaml:"containerz-container-remove-name,omitempty"`
+	ContainerzContainerRemoveForce bool   `json:"containerz-container-remove-force,omitempty" mapstructure:"containerz-container-remove-force,omitempty" yaml:"containerz-container-remove-force,omitempty"`
+	// Containerz - Container Update
+	ContainerzContainerUpdateInstanceName string `json:"containerz-container-update-instance-name,omitempty" mapstructure:"containerz-container-update-instance-name,omitempty" yaml:"containerz-container-update-instance-name,omitempty"`
+	ContainerzContainerUpdateImageName    string `json:"containerz-container-update-image-name,omitempty" mapstructure:"containerz-container-update-image-name,omitempty" yaml:"containerz-container-update-image-name,omitempty"`
+	ContainerzContainerUpdateImageTag     string `json:"containerz-container-update-image-tag,omitempty" mapstructure:"containerz-container-update-image-tag,omitempty" yaml:"containerz-container-update-image-tag,omitempty"`
+	ContainerzContainerUpdateAsync        bool   `json:"containerz-container-update-async,omitempty" mapstructure:"containerz-container-update-async,omitempty" yaml:"containerz-container-update-async,omitempty"`
+	// Containerz - Log
+	ContainerzLogInstanceName string `json:"containerz-log-instance-name,omitempty" mapstructure:"containerz-log-instance-name,omitempty" yaml:"containerz-log-instance-name,omitempty"`
+	ContainerzLogFollow       bool   `json:"containerz-log-follow,omitempty" mapstructure:"containerz-log-follow,omitempty" yaml:"containerz-log-follow,omitempty"`
+	// Containerz - Volume Create
+	ContainerzVolumeCreateName   string   `json:"containerz-volume-create-name,omitempty" mapstructure:"containerz-volume-create-name,omitempty" yaml:"containerz-volume-create-name,omitempty"`
+	ContainerzVolumeCreateDriver string   `json:"containerz-volume-create-driver,omitempty" mapstructure:"containerz-volume-create-driver,omitempty" yaml:"containerz-volume-create-driver,omitempty"`
+	ContainerzVolumeCreateLabels []string `json:"containerz-volume-create-labels,omitempty" mapstructure:"containerz-volume-create-labels,omitempty" yaml:"containerz-volume-create-labels,omitempty"`
+	// Containerz - Volume List
+	ContainerzVolumeListFilter []string `json:"containerz-volume-list-filter,omitempty" mapstructure:"containerz-volume-list-filter,omitempty" yaml:"containerz-volume-list-filter,omitempty"`
+	// Containerz - Volume Remove
+	ContainerzVolumeRemoveName  string `json:"containerz-volume-remove-name,omitempty" mapstructure:"containerz-volume-remove-name,omitempty" yaml:"containerz-volume-remove-name,omitempty"`
+	ContainerzVolumeRemoveForce bool   `json:"containerz-volume-remove-force,omitempty" mapstructure:"containerz-volume-remove-force,omitempty" yaml:"containerz-volume-remove-force,omitempty"`
+	// Containerz - Plugin Start
+	ContainerzPluginStartName         string `json:"containerz-plugin-start-name,omitempty" mapstructure:"containerz-plugin-start-name,omitempty" yaml:"containerz-plugin-start-name,omitempty"`
+	ContainerzPluginStartInstanceName string `json:"containerz-plugin-start-instance-name,omitempty" mapstructure:"containerz-plugin-start-instance-name,omitempty" yaml:"containerz-plugin-start-instance-name,omitempty"`
+	ContainerzPluginStartConfig       string `json:"containerz-plugin-start-config,omitempty" mapstructure:"containerz-plugin-start-config,omitempty" yaml:"containerz-plugin-start-config,omitempty"`
+	// Containerz - Plugin Stop
+	ContainerzPluginStopInstanceName string `json:"containerz-plugin-stop-instance-name,omitempty" mapstructure:"containerz-plugin-stop-instance-name,omitempty" yaml:"containerz-plugin-stop-instance-name,omitempty"`
+	// Containerz - Plugin List
+	ContainerzPluginListInstanceName string `json:"containerz-plugin-list-instance-name,omitempty" mapstructure:"containerz-plugin-list-instance-name,omitempty" yaml:"containerz-plugin-list-instance-name,omitempty"`
+	// Containerz - Plugin Remove
+	ContainerzPluginRemoveInstanceName string `json:"containerz-plugin-remove-instance-name,omitempty" mapstructure:"containerz-plugin-remove-instance-name,omitempty" yaml:"containerz-plugin-remove-instance-name,omitempty"`
 }
 
 func New() *Config {
