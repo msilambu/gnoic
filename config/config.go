@@ -265,6 +265,7 @@ type LocalFlags struct {
 	ContainerzContainerStartNetwork      string   `json:"containerz-container-start-network,omitempty" mapstructure:"containerz-container-start-network,omitempty" yaml:"containerz-container-start-network,omitempty"`
 	ContainerzContainerStartRestart      string   `json:"containerz-container-start-restart,omitempty" mapstructure:"containerz-container-start-restart,omitempty" yaml:"containerz-container-start-restart,omitempty"`
 	ContainerzContainerStartLabels       []string `json:"containerz-container-start-labels,omitempty" mapstructure:"containerz-container-start-labels,omitempty" yaml:"containerz-container-start-labels,omitempty"`
+	ContainerzContainerStartLocation     string   `json:"containerz-container-start-location,omitempty" mapstructure:"containerz-container-start-location,omitempty" yaml:"containerz-container-start-location,omitempty"`
 	// Containerz - Container Stop
 	ContainerzContainerStopInstanceName string `json:"containerz-container-stop-instance-name,omitempty" mapstructure:"containerz-container-stop-instance-name,omitempty" yaml:"containerz-container-stop-instance-name,omitempty"`
 	ContainerzContainerStopForce        bool   `json:"containerz-container-stop-force,omitempty" mapstructure:"containerz-container-stop-force,omitempty" yaml:"containerz-container-stop-force,omitempty"`

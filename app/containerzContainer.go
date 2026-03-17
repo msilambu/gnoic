@@ -54,10 +54,21 @@ func parseRestartPolicy(input string) (*containerz.StartContainerRequest_Restart
 // buildStartContainerRequest assembles a StartContainerRequest from the
 // supplied field values. It is used directly by StartContainer and as the
 // params sub-message of UpdateContainer.
+//
+// Tag defaulting: if imageName is non-empty and tag is empty, tag is set to
+// "latest" automatically. When imageName is empty (restart-by-name case), the
+// tag is left empty and not sent to the server.
+//
+// Location is one of: "" (omit / L_UNKNOWN), "primary", "backup", "all".
 func buildStartContainerRequest(
-	imageName, tag, cmd, instanceName, network, restartPolicy string,
+	imageName, tag, cmd, instanceName, network, restartPolicy, location string,
 	ports, env, volumes, labels []string,
 ) (*containerz.StartContainerRequest, error) {
+	// Apply the "latest" default only when an image was actually specified.
+	if imageName != "" && tag == "" {
+		tag = "latest"
+	}
+
 	req := &containerz.StartContainerRequest{
 		ImageName:    imageName,
 		Tag:          tag,
@@ -66,6 +77,17 @@ func buildStartContainerRequest(
 		Environment:  parseKVMap(env),
 		Labels:       parseKVMap(labels),
 		Network:      network,
+	}
+
+	// Location: where on the device the container should run.
+	switch strings.ToLower(location) {
+	case "primary":
+		req.Location = containerz.StartContainerRequest_L_PRIMARY
+	case "backup":
+		req.Location = containerz.StartContainerRequest_L_BACKUP
+	case "all":
+		req.Location = containerz.StartContainerRequest_L_ALL
+	// "" or "unknown" → leave at zero value (L_UNKNOWN)
 	}
 
 	// Port mappings "internal:external"
@@ -117,24 +139,30 @@ func buildStartContainerRequest(
 
 func (a *App) InitContainerzStartContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartImageName, "image", "", "container image name (required)")
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartTag, "tag", "latest", "image tag")
+	// --instance-name and --image are both optional individually:
+	//   * --instance-name alone  -> restart a stopped container
+	//   * --image alone          -> start a new container (server assigns instance name)
+	//   * both                   -> start a new container with the given name
+	// At least one of the two must be provided.
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartInstanceName, "instance-name", "", "name of the container instance; omit to let the server auto-assign one")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartImageName, "image", "", "container image name; omit to restart a stopped container identified by --instance-name")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartTag, "tag", "", "image tag (default: latest when --image is provided)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartCmd, "cmd", "", "command to run inside the container")
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartInstanceName, "instance-name", "", "name for the running container (auto-assigned if empty)")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartPorts, "port", []string{}, "port mappings in internal:external format (repeatable)")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartEnv, "env", []string{}, "environment variables in KEY=VALUE format (repeatable)")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartVolumes, "volume", []string{}, "volume mounts in name:mountpoint[:ro] format (repeatable)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartNetwork, "network", "", "network mode (e.g. host, bridge)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "none", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartLabels, "label", []string{}, "labels in KEY=VALUE format (repeatable)")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartLocation, "location", "", "where to run the container: primary|backup|all (default: unspecified)")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
 	})
 }
 
 func (a *App) RunEContainerzStartContainer(cmd *cobra.Command, args []string) error {
-	if a.Config.ContainerzContainerStartImageName == "" {
-		return fmt.Errorf("--image is required")
+	if a.Config.ContainerzContainerStartImageName == "" && a.Config.ContainerzContainerStartInstanceName == "" {
+		return fmt.Errorf("at least one of --image or --instance-name is required")
 	}
 	return a.containerzDo(func(ctx context.Context, t *api.Target, c containerz.ContainerzClient) error {
 		return a.containerzStartContainer(ctx, t, c)
@@ -149,6 +177,7 @@ func (a *App) containerzStartContainer(ctx context.Context, t *api.Target, c con
 		a.Config.ContainerzContainerStartInstanceName,
 		a.Config.ContainerzContainerStartNetwork,
 		a.Config.ContainerzContainerStartRestart,
+		a.Config.ContainerzContainerStartLocation,
 		a.Config.ContainerzContainerStartPorts,
 		a.Config.ContainerzContainerStartEnv,
 		a.Config.ContainerzContainerStartVolumes,
@@ -272,7 +301,7 @@ func (a *App) containerzListContainer(ctx context.Context, t *api.Target, c cont
 
 func (a *App) InitContainerzRemoveContainerFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerRemoveName, "name", "", "container instance name to remove (required)")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerRemoveName, "instance-name", "", "name of the container instance to remove (required)")
 	cmd.Flags().BoolVar(&a.Config.ContainerzContainerRemoveForce, "force", false, "force removal of a running container")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
@@ -281,7 +310,7 @@ func (a *App) InitContainerzRemoveContainerFlags(cmd *cobra.Command) {
 
 func (a *App) RunEContainerzRemoveContainer(cmd *cobra.Command, args []string) error {
 	if a.Config.ContainerzContainerRemoveName == "" {
-		return fmt.Errorf("--name is required")
+		return fmt.Errorf("--instance-name is required")
 	}
 	return a.containerzDo(func(ctx context.Context, t *api.Target, c containerz.ContainerzClient) error {
 		return a.containerzRemoveContainer(ctx, t, c)
@@ -309,15 +338,12 @@ func (a *App) InitContainerzUpdateContainerFlags(cmd *cobra.Command) {
 	// Identity of the container being updated and the new image target.
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateInstanceName, "instance-name", "", "name of the running container to update (required)")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateImageName, "image", "", "new image name to update to (required)")
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateImageTag, "tag", "latest", "new image tag")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateImageTag, "tag", "", "new image tag (default: latest when --image is provided)")
 	cmd.Flags().BoolVar(&a.Config.ContainerzContainerUpdateAsync, "async", false, "perform the update asynchronously")
 	// params field – runtime parameters for the updated container.
 	// These use the same flag names as 'container start' for convenience.
 	// If none are provided, params is left nil and the server reuses the
 	// existing container configuration.
-	// Note: --new-instance-name is used instead of --instance-name to avoid
-	// conflict with the flag that identifies which container to update.
-	//cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsInstanceName, "new-instance-name", "", "instance name to assign to the updated container")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsCmd, "cmd", "", "command to run inside the updated container")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsPorts, "port", []string{}, "port mappings in internal:external format (repeatable)")
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsEnv, "env", []string{}, "environment variables in KEY=VALUE format (repeatable)")
@@ -343,10 +369,15 @@ func (a *App) RunEContainerzUpdateContainer(cmd *cobra.Command, args []string) e
 }
 
 func (a *App) containerzUpdateContainer(ctx context.Context, t *api.Target, c containerz.ContainerzClient) error {
+	// Apply the same "default to latest" tag rule as container-start.
+	imageTag := a.Config.ContainerzContainerUpdateImageTag
+	if imageTag == "" {
+		imageTag = "latest"
+	}
 	req := &containerz.UpdateContainerRequest{
 		InstanceName: a.Config.ContainerzContainerUpdateInstanceName,
 		ImageName:    a.Config.ContainerzContainerUpdateImageName,
-		ImageTag:     a.Config.ContainerzContainerUpdateImageTag,
+		ImageTag:     imageTag,
 		Async:        a.Config.ContainerzContainerUpdateAsync,
 	}
 
@@ -360,6 +391,7 @@ func (a *App) containerzUpdateContainer(ctx context.Context, t *api.Target, c co
 			a.Config.ContainerzContainerUpdateInstanceName,  // Use same instance name 
 			a.Config.ContainerzContainerUpdateParamsNetwork,
 			a.Config.ContainerzContainerUpdateParamsRestart,
+			"", // location is not applicable for container-update params
 			a.Config.ContainerzContainerUpdateParamsPorts,
 			a.Config.ContainerzContainerUpdateParamsEnv,
 			a.Config.ContainerzContainerUpdateParamsVolumes,
