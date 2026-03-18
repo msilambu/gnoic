@@ -266,6 +266,13 @@ type LocalFlags struct {
 	ContainerzContainerStartRestart      string   `json:"containerz-container-start-restart,omitempty" mapstructure:"containerz-container-start-restart,omitempty" yaml:"containerz-container-start-restart,omitempty"`
 	ContainerzContainerStartLabels       []string `json:"containerz-container-start-labels,omitempty" mapstructure:"containerz-container-start-labels,omitempty" yaml:"containerz-container-start-labels,omitempty"`
 	ContainerzContainerStartLocation     string   `json:"containerz-container-start-location,omitempty" mapstructure:"containerz-container-start-location,omitempty" yaml:"containerz-container-start-location,omitempty"`
+	ContainerzContainerStartCapAdd        []string `json:"containerz-container-start-cap-add,omitempty" mapstructure:"containerz-container-start-cap-add,omitempty" yaml:"containerz-container-start-cap-add,omitempty"`
+	ContainerzContainerStartCapRemove     []string `json:"containerz-container-start-cap-remove,omitempty" mapstructure:"containerz-container-start-cap-remove,omitempty" yaml:"containerz-container-start-cap-remove,omitempty"`
+	ContainerzContainerStartRunAs         string   `json:"containerz-container-start-run-as,omitempty" mapstructure:"containerz-container-start-run-as,omitempty" yaml:"containerz-container-start-run-as,omitempty"`
+	ContainerzContainerStartLimitCPU      float64  `json:"containerz-container-start-limit-cpu,omitempty" mapstructure:"containerz-container-start-limit-cpu,omitempty" yaml:"containerz-container-start-limit-cpu,omitempty"`
+	ContainerzContainerStartLimitSoftMem  int64    `json:"containerz-container-start-limit-soft-mem,omitempty" mapstructure:"containerz-container-start-limit-soft-mem,omitempty" yaml:"containerz-container-start-limit-soft-mem,omitempty"`
+	ContainerzContainerStartLimitHardMem  int64    `json:"containerz-container-start-limit-hard-mem,omitempty" mapstructure:"containerz-container-start-limit-hard-mem,omitempty" yaml:"containerz-container-start-limit-hard-mem,omitempty"`
+	ContainerzContainerStartDevices       []string `json:"containerz-container-start-device,omitempty" mapstructure:"containerz-container-start-device,omitempty" yaml:"containerz-container-start-device,omitempty"`
 	// Containerz - Container Stop
 	ContainerzContainerStopInstanceName string `json:"containerz-container-stop-instance-name,omitempty" mapstructure:"containerz-container-stop-instance-name,omitempty" yaml:"containerz-container-stop-instance-name,omitempty"`
 	ContainerzContainerStopForce        bool   `json:"containerz-container-stop-force,omitempty" mapstructure:"containerz-container-stop-force,omitempty" yaml:"containerz-container-stop-force,omitempty"`
@@ -291,6 +298,13 @@ type LocalFlags struct {
 	ContainerzContainerUpdateParamsNetwork      string   `json:"containerz-container-update-network,omitempty" mapstructure:"containerz-container-update-network,omitempty" yaml:"containerz-container-update-network,omitempty"`
 	ContainerzContainerUpdateParamsRestart      string   `json:"containerz-container-update-restart,omitempty" mapstructure:"containerz-container-update-restart,omitempty" yaml:"containerz-container-update-restart,omitempty"`
 	ContainerzContainerUpdateParamsLabels       []string `json:"containerz-container-update-label,omitempty" mapstructure:"containerz-container-update-label,omitempty" yaml:"containerz-container-update-label,omitempty"`
+	ContainerzContainerUpdateParamsCapAdd        []string `json:"containerz-container-update-cap-add,omitempty" mapstructure:"containerz-container-update-cap-add,omitempty" yaml:"containerz-container-update-cap-add,omitempty"`
+	ContainerzContainerUpdateParamsCapRemove     []string `json:"containerz-container-update-cap-remove,omitempty" mapstructure:"containerz-container-update-cap-remove,omitempty" yaml:"containerz-container-update-cap-remove,omitempty"`
+	ContainerzContainerUpdateParamsRunAs         string   `json:"containerz-container-update-run-as,omitempty" mapstructure:"containerz-container-update-run-as,omitempty" yaml:"containerz-container-update-run-as,omitempty"`
+	ContainerzContainerUpdateParamsLimitCPU      float64  `json:"containerz-container-update-limit-cpu,omitempty" mapstructure:"containerz-container-update-limit-cpu,omitempty" yaml:"containerz-container-update-limit-cpu,omitempty"`
+	ContainerzContainerUpdateParamsLimitSoftMem  int64    `json:"containerz-container-update-limit-soft-mem,omitempty" mapstructure:"containerz-container-update-limit-soft-mem,omitempty" yaml:"containerz-container-update-limit-soft-mem,omitempty"`
+	ContainerzContainerUpdateParamsLimitHardMem  int64    `json:"containerz-container-update-limit-hard-mem,omitempty" mapstructure:"containerz-container-update-limit-hard-mem,omitempty" yaml:"containerz-container-update-limit-hard-mem,omitempty"`
+	ContainerzContainerUpdateParamsDevices       []string `json:"containerz-container-update-device,omitempty" mapstructure:"containerz-container-update-device,omitempty" yaml:"containerz-container-update-device,omitempty"`
 	// Containerz - Log
 	ContainerzLogInstanceName string `json:"containerz-log-instance-name,omitempty" mapstructure:"containerz-log-instance-name,omitempty" yaml:"containerz-log-instance-name,omitempty"`
 	ContainerzLogFollow       bool   `json:"containerz-log-follow,omitempty" mapstructure:"containerz-log-follow,omitempty" yaml:"containerz-log-follow,omitempty"`
