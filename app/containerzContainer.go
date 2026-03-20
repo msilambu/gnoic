@@ -86,9 +86,7 @@ func parseRestartPolicy(input string) (*containerz.StartContainerRequest_Restart
 			Attempts: attempts,
 		}, nil
 	default:
-		return &containerz.StartContainerRequest_Restart{
-			Policy: containerz.StartContainerRequest_Restart_NONE,
-		}, nil
+		return nil, nil
 	}
 }
 
@@ -184,11 +182,13 @@ func buildStartContainerRequest(p startContainerParams) (*containerz.StartContai
 	}
 
 	// Restart policy
-	restart, err := parseRestartPolicy(p.RestartPolicy)
-	if err != nil {
-		return nil, err
+	if p.RestartPolicy != "" {
+		restart, err := parseRestartPolicy(p.RestartPolicy)
+		if err != nil {
+			return nil, err
+		}
+		req.Restart = restart
 	}
-	req.Restart = restart
 
 	// Capabilities
 	if len(p.CapAdd) > 0 || len(p.CapRemove) > 0 {
@@ -270,7 +270,7 @@ func (a *App) InitContainerzStartContainerFlags(cmd *cobra.Command) {
 	// Devices
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartDevices, "device", []string{}, "host devices in src:dst[:perms] format, perms = any of r/w/m (repeatable)")
 	// Restart & placement
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "none", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartLocation, "location", "", "where to run the container: primary|backup|all (default: unspecified)")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
