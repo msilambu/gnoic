@@ -18,7 +18,7 @@ func (a *App) InitContainerzStartPluginFlags(cmd *cobra.Command) {
 	cmd.ResetFlags()
 	cmd.Flags().StringVar(&a.Config.ContainerzPluginStartName, "name", "", "plugin file name as deployed (required)")
 	cmd.Flags().StringVar(&a.Config.ContainerzPluginStartInstanceName, "instance-name", "", "name for the running plugin instance (required)")
-	cmd.Flags().StringVar(&a.Config.ContainerzPluginStartConfig, "config", "", "JSON configuration string for the plugin")
+	cmd.Flags().StringVar(&a.Config.ContainerzPluginStartConfig, "config-file", "", "path to a JSON file containing the plugin configuration")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
 	})
@@ -37,10 +37,18 @@ func (a *App) RunEContainerzStartPlugin(cmd *cobra.Command, args []string) error
 }
 
 func (a *App) containerzStartPlugin(ctx context.Context, t *api.Target, c containerz.ContainerzClient) error {
+	var configJSON string
+	if a.Config.ContainerzPluginStartConfig != "" {
+		data, err := os.ReadFile(a.Config.ContainerzPluginStartConfig)
+		if err != nil {
+			return fmt.Errorf("reading plugin config file %q: %v", a.Config.ContainerzPluginStartConfig, err)
+		}
+		configJSON = string(data)
+	}
 	req := &containerz.StartPluginRequest{
 		Name:         a.Config.ContainerzPluginStartName,
 		InstanceName: a.Config.ContainerzPluginStartInstanceName,
-		Config:       a.Config.ContainerzPluginStartConfig,
+		Config:       configJSON,
 	}
 	rsp, err := c.StartPlugin(ctx, req)
 	if err != nil {
