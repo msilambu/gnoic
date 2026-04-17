@@ -305,6 +305,7 @@ type LocalFlags struct {
 	ContainerzContainerUpdateParamsLimitSoftMem  int64    `json:"containerz-container-update-limit-soft-mem,omitempty" mapstructure:"containerz-container-update-limit-soft-mem,omitempty" yaml:"containerz-container-update-limit-soft-mem,omitempty"`
 	ContainerzContainerUpdateParamsLimitHardMem  int64    `json:"containerz-container-update-limit-hard-mem,omitempty" mapstructure:"containerz-container-update-limit-hard-mem,omitempty" yaml:"containerz-container-update-limit-hard-mem,omitempty"`
 	ContainerzContainerUpdateParamsDevices       []string `json:"containerz-container-update-device,omitempty" mapstructure:"containerz-container-update-device,omitempty" yaml:"containerz-container-update-device,omitempty"`
+	ContainerzContainerUpdateParamsLocation      string   `json:"containerz-container-update-location,omitempty" mapstructure:"containerz-container-update-location,omitempty" yaml:"containerz-container-update-location,omitempty"`
 	// Containerz - Log
 	ContainerzLogInstanceName string `json:"containerz-log-instance-name,omitempty" mapstructure:"containerz-log-instance-name,omitempty" yaml:"containerz-log-instance-name,omitempty"`
 	ContainerzLogFollow       bool   `json:"containerz-log-follow,omitempty" mapstructure:"containerz-log-follow,omitempty" yaml:"containerz-log-follow,omitempty"`
