@@ -143,7 +143,7 @@ func buildStartContainerRequest(p startContainerParams) (*containerz.StartContai
 		req.Location = containerz.StartContainerRequest_L_BACKUP
 	case "all":
 		req.Location = containerz.StartContainerRequest_L_ALL
-	// "" or "unknown" → leave at zero value (L_UNKNOWN)
+		// "" or "unknown" → leave at zero value (L_UNKNOWN)
 	}
 
 	// Port mappings "internal:external"
@@ -271,7 +271,7 @@ func (a *App) InitContainerzStartContainerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerStartDevices, "device", []string{}, "host devices in src:dst[:perms] format, perms = any of r/w/m (repeatable)")
 	// Restart & placement
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartRestart, "restart", "", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
-	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartLocation, "location", "", "where to run the container: primary|backup|all (default: unspecified)")
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerStartLocation, "location", "primary", "where to run the container: primary|backup|all (default: primary)")
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
 	})
@@ -297,10 +297,10 @@ func (a *App) containerzStartContainer(ctx context.Context, t *api.Target, c con
 		Env:           a.Config.ContainerzContainerStartEnv,
 		Volumes:       a.Config.ContainerzContainerStartVolumes,
 		Labels:        a.Config.ContainerzContainerStartLabels,
-		CapAdd:       a.Config.ContainerzContainerStartCapAdd,
-		CapRemove:    a.Config.ContainerzContainerStartCapRemove,
-		RunAs:        a.Config.ContainerzContainerStartRunAs,
-		LimitCPU:     a.Config.ContainerzContainerStartLimitCPU,
+		CapAdd:        a.Config.ContainerzContainerStartCapAdd,
+		CapRemove:     a.Config.ContainerzContainerStartCapRemove,
+		RunAs:         a.Config.ContainerzContainerStartRunAs,
+		LimitCPU:      a.Config.ContainerzContainerStartLimitCPU,
 		LimitSoftMem:  a.Config.ContainerzContainerStartLimitSoftMem,
 		LimitHardMem:  a.Config.ContainerzContainerStartLimitHardMem,
 		Devices:       a.Config.ContainerzContainerStartDevices,
@@ -391,7 +391,7 @@ func (a *App) containerzListContainer(ctx context.Context, t *api.Target, c cont
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"TARGET", "ID", "NAME", "IMAGE", "STATUS"})
+	table.SetHeader([]string{"TARGET", "ID", "NAME", "IMAGE", "STATUS", "LABELS"})
 	formatTable(table)
 
 	count := 0
@@ -404,12 +404,21 @@ func (a *App) containerzListContainer(ctx context.Context, t *api.Target, c cont
 			return fmt.Errorf("ListContainer stream error: %v", err)
 		}
 		a.printMsg(t.Config.Address, rsp)
+		labels := make([]string, 0, len(rsp.Labels))
+		for k, v := range rsp.Labels {
+			labels = append(labels, k+"="+v)
+		}
+		var labelsStr string
+		if len(labels) > 0 {
+			labelsStr = "[" + strings.Join(labels, ",\n") + "]"
+		}
 		table.Append([]string{
 			t.Config.Address,
 			rsp.Id,
 			rsp.Name,
 			rsp.ImageName,
 			rsp.Status.String(),
+			labelsStr,
 		})
 		count++
 	}
@@ -491,6 +500,8 @@ func (a *App) InitContainerzUpdateContainerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&a.Config.ContainerzContainerUpdateParamsDevices, "device", []string{}, "host devices in src:dst[:perms] format (repeatable)")
 	// Restart
 	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsRestart, "restart", "", "restart policy: none|always|unless-stopped|on-failure[:<attempts>]")
+	// Location is not updatable per the proto spec, so the value should be same as what used with container-start
+	cmd.Flags().StringVar(&a.Config.ContainerzContainerUpdateParamsLocation, "location", "primary", "where to run the container: primary|backup|all (default: primary)")
 
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
@@ -537,13 +548,13 @@ func (a *App) containerzUpdateContainer(ctx context.Context, t *api.Target, c co
 			Labels:        a.Config.ContainerzContainerUpdateParamsLabels,
 			CapAdd:        a.Config.ContainerzContainerUpdateParamsCapAdd,
 			CapRemove:     a.Config.ContainerzContainerUpdateParamsCapRemove,
-			RunAs:        a.Config.ContainerzContainerUpdateParamsRunAs,
+			RunAs:         a.Config.ContainerzContainerUpdateParamsRunAs,
 			LimitCPU:      a.Config.ContainerzContainerUpdateParamsLimitCPU,
 			LimitSoftMem:  a.Config.ContainerzContainerUpdateParamsLimitSoftMem,
 			LimitHardMem:  a.Config.ContainerzContainerUpdateParamsLimitHardMem,
 			Devices:       a.Config.ContainerzContainerUpdateParamsDevices,
 			RestartPolicy: a.Config.ContainerzContainerUpdateParamsRestart,
-			// Location is not updatable per the proto spec; omitted here.
+			Location:      a.Config.ContainerzContainerUpdateParamsLocation,
 		})
 		if err != nil {
 			return fmt.Errorf("invalid params: %v", err)
@@ -574,6 +585,7 @@ func (a *App) paramsProvided() bool {
 		a.Config.ContainerzContainerUpdateParamsNetwork != "" ||
 		a.Config.ContainerzContainerUpdateParamsRestart != "" ||
 		a.Config.ContainerzContainerUpdateParamsRunAs != "" ||
+		a.Config.ContainerzContainerUpdateParamsLocation != "" ||
 		a.Config.ContainerzContainerUpdateParamsLimitCPU != 0 ||
 		a.Config.ContainerzContainerUpdateParamsLimitSoftMem != 0 ||
 		a.Config.ContainerzContainerUpdateParamsLimitHardMem != 0 ||
