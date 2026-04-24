@@ -143,7 +143,8 @@ func buildStartContainerRequest(p startContainerParams) (*containerz.StartContai
 		req.Location = containerz.StartContainerRequest_L_BACKUP
 	case "all":
 		req.Location = containerz.StartContainerRequest_L_ALL
-		// "" or "unknown" → leave at zero value (L_UNKNOWN)
+	default:
+		req.Location = containerz.StartContainerRequest_L_UNKNOWN
 	}
 
 	// Port mappings "internal:external"

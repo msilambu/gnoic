@@ -43,7 +43,7 @@ func (a *App) InitServerFlags(cmd *cobra.Command) {
 	//
 	cmd.Flags().BoolVar(&a.Config.ServerFile, "file", false, "start gNOI File service server")
 	cmd.Flags().StringVar(&a.Config.ServerFileHash, "file-hash", "md5", "hash type to use at the end of File Get/Transfer RPC. md5, sha256, sha512")
-	cmd.Flags().BoolVar(&a.Config.ServerContainerz, "containerz", false, "start gNOI Containerz mock service server")
+	cmd.Flags().BoolVar(&a.Config.ServerContainerz, "containerz", false, "start gNOI Containerz service mock server")
 	//
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		a.Config.FileConfig.BindPFlag(fmt.Sprintf("%s-%s", cmd.Name(), flag.Name), flag)
@@ -79,13 +79,13 @@ func (a *App) RunEServer(cmd *cobra.Command, args []string) error {
 		a.Logger.Info("File service registered")
 	}
 
-	// Register Containerz mock service if requested.
+	// Register Containerz service mock server if requested.
 	if a.Config.ServerContainerz {
 		cs := &containerzMockServer{
 			logger: a.Logger.WithField("server", "containerz"),
 		}
 		containerz.RegisterContainerzServer(grpcServer, cs)
-		a.Logger.Info("Containerz mock service registered")
+		a.Logger.Info("Containerz service mock server registered")
 	}
 
 	// Default: register file server for backwards compatibility when no flag is set.

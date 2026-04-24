@@ -11,10 +11,10 @@ package app
 //
 // Then invoke any containerz command against it, for example:
 //
-//	gnoic -a localhost:9339 --insecure containerz image list
-//	gnoic -a localhost:9339 --insecure containerz container list
-//	gnoic -a localhost:9339 --insecure containerz volume list
-//	gnoic -a localhost:9339 --insecure containerz plugin list
+//	gnoic -a localhost:9339 --insecure containerz image-list
+//	gnoic -a localhost:9339 --insecure containerz container-list
+//	gnoic -a localhost:9339 --insecure containerz volume-list
+//	gnoic -a localhost:9339 --insecure containerz plugin-list
 
 import (
 	"context"

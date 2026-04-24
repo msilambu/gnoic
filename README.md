@@ -7,7 +7,7 @@
 - [OS](https://github.com/openconfig/gnoi/blob/main/os/os.proto)
 - [System](https://github.com/openconfig/gnoi/blob/master/system/system.proto)
 
-As well as a server implementation of the gNOI [File](https://github.com/openconfig/gnoi/blob/master/file/file.proto) Service.
+As well as a server implementation of the gNOI [File](https://github.com/openconfig/gnoi/blob/master/file/file.proto) Service and a mock server (gnoic server --containerz) implementation of gNOI [Containerz](https://github.com/openconfig/gnoi/blob/main/containerz/containerz.proto) Service
 
 Documentation available at [https://gnoic.kmrd.dev](https://gnoic.kmrd.dev)
 
